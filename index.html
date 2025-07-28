@@ -1,23 +1,35 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Filtrador de Arquivo AEJ</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Link para o arquivo CSS externo -->
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AEJ - Filtragem Avançada</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Link para o arquivo CSS externo -->
+  <link rel="stylesheet" href="style.css" />
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css"/>
 </head>
 <body class="bg-gray-100 p-4">
-    <div class="container mx-auto mt-8 p-8 bg-white rounded-xl shadow-lg">
-        <!-- Logo adicionada aqui -->
-        <img src="https://media.glassdoor.com/sqll/2733569/talentos-consultoria-squarelogo-1649741391944.png" alt="Talentos Consultoria Logo" class="logo">
-        
-        <h1 class="text-3xl font-bold text-gray-800 mb-6">Filtrador de Arquivo AEJ</h1>
+  <div class="container mx-auto mt-8 p-8 bg-white rounded-xl shadow-lg">
+    <!-- Logo adicionada aqui -->
+    <img src="https://media.glassdoor.com/sqll/2733569/talentos-consultoria-squarelogo-1649741391944.png" alt="Talentos Consultoria Logo" class="logo">
+    
+    <h1 class="text-3xl font-bold text-gray-800 mb-6">Filtrador de Arquivo AEJ</h1>
 
+    <!-- Navegação por Abas -->
+    <div class="tabs">
+      <button role="tab" type="button" class="tab-button active-tab-button px-4 py-2 text-sm font-medium focus:outline-none" id="tabInicialBtn" aria-selected="true" aria-controls="tabInicial">Processamento Inicial</button>
+      <button role="tab" type="button" class="tab-button inactive-tab-button px-4 py-2 text-sm font-medium focus:outline-none" id="tabAdvancedFilter" aria-selected="false" aria-controls="tabFiltered" tabindex="-1">Filtragem Avançada</button>
+    </div>
+
+    <!-- Conteúdo da Aba de Processamento Inicial -->
+    <div id="tabInicial" class="tab-content" role="tabpanel">
+        <h2 class="text-xl font-bold text-gray-700 mb-4 text-left">Processar Arquivo AEJ</h2>
         <div class="mb-6">
-            <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2">
+            <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2 text-left">
                 Selecione o arquivo aej.txt:
             </label>
             <input type="file" id="fileInput" accept=".txt" class="block w-full text-sm text-gray-500
@@ -29,27 +41,61 @@
                 cursor-pointer">
         </div>
 
-        <button id="processButton" class="btn btn-primary mt-4 mb-6" disabled>
+        <button class="btn btn-primary mt-4 mb-6 w-full" id="processButton">
             Processar Arquivo
             <span id="loadingSpinner" class="loader hidden"></span>
         </button>
-
-        <div id="messageArea" class="text-red-600 text-sm mb-4"></div>
+        <div id="messageArea" class="text-red-600 text-sm mb-4 text-left"></div>
 
         <div class="mb-6">
-            <label for="outputContent" class="block text-gray-700 text-sm font-semibold mb-2">
+            <label for="outputContentInitial" class="block text-gray-700 text-sm font-semibold mb-2 text-left">
                 Conteúdo Processado:
             </label>
-            <textarea id="outputContent" readonly
+            <textarea id="outputContentInitial" rows="15" readonly
                 class="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
 
-        <button id="downloadButton" class="btn btn-secondary" disabled>
-            Baixar Arquivo Modificado
-        </button>
+        <button id="downloadTxtButton" class="btn btn-secondary w-full">Baixar TXT Processado</button>
     </div>
 
-    <!-- Link para o arquivo JavaScript externo -->
-    <script src="script.js"></script>
+    <!-- Conteúdo da Aba de Filtragem Avançada -->
+    <div id="tabFiltered" class="tab-content hidden" role="tabpanel">
+        <h2 class="text-xl font-bold text-gray-700 mb-4 text-left">Tabela Filtrada AEJ</h2>
+        <div class="mb-6">
+            <label class="block text-gray-700 text-sm font-semibold mb-2 text-left">
+                Tabela de Dados:
+            </label>
+            <div class="overflow-x-auto border border-gray-300 rounded-lg p-2 bg-gray-50">
+                <table id="filteredTable" class="display nowrap w-full text-sm text-gray-800">
+                    <thead><tr id="tableHeaderRow"></tr></thead>
+                    <tbody id="tableBody">
+                        <!-- Mensagem de placeholder para quando a tabela está vazia -->
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-gray-500">
+                                Carregue e processe um arquivo na aba "Processamento Inicial" para ver os dados aqui.
+                                <br>
+                                A tabela será preenchida com linhas que começam com "03|".
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <button id="downloadButton" class="btn btn-secondary w-full mt-4">Baixar Tabela (Excel)</button>
+    </div>
+  </div>
+
+  <!-- jQuery (necessário para DataTables) -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+  <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+  <!-- Link para o arquivo JavaScript externo -->
+  <script src="Script.js"></script>
 </body>
 </html>
