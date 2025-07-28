@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filtrador de Arquivo AEJ</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Link para o arquivo CSS externo -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="container mx-auto mt-8 p-8 bg-white rounded-xl shadow-lg">
+        <!-- Logo adicionada aqui -->
+        <img src="https://media.glassdoor.com/sqll/2733569/talentos-consultoria-squarelogo-1649741391944.png" alt="Talentos Consultoria Logo" class="logo">
+        
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Filtrador de Arquivo AEJ</h1>
+
+        <div class="mb-6">
+            <label for="fileInput" class="block text-gray-700 text-sm font-semibold mb-2">
+                Selecione o arquivo aej.txt:
+            </label>
+            <input type="file" id="fileInput" accept=".txt" class="block w-full text-sm text-gray-500
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-blue-50 file:text-blue-700
+                hover:file:bg-blue-100
+                cursor-pointer">
+        </div>
+
+        <button id="processButton" class="btn btn-primary mt-4 mb-6" disabled>
+            Processar Arquivo
+            <span id="loadingSpinner" class="loader hidden"></span>
+        </button>
+
+        <div id="messageArea" class="text-red-600 text-sm mb-4"></div>
+
+        <div class="mb-6">
+            <label for="outputContent" class="block text-gray-700 text-sm font-semibold mb-2">
+                Conteúdo Processado:
+            </label>
+            <textarea id="outputContent" readonly
+                class="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+
+        <button id="downloadButton" class="btn btn-secondary" disabled>
+            Baixar Arquivo Modificado
+        </button>
+    </div>
+
+    <!-- Link para o arquivo JavaScript externo -->
+    <script src="script.js"></script>
+</body>
+</html>
