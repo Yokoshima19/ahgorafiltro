@@ -1,179 +1,97 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const fileInput = document.getElementById('fileInput');
-    const processButton = document.getElementById('processButton');
-    const downloadButton = document.getElementById('downloadButton');
-    const outputContent = document.getElementById('outputContent');
-    const messageArea = document.getElementById('messageArea');
-    const loadingSpinner = document.getElementById('loadingSpinner');
+document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("fileInput");
+    const processButton = document.getElementById("processButton");
+    const outputContent = document.getElementById("outputContentInitial");
+    const filteredTabButton = document.getElementById("filteredTab");
+    const downloadButton = document.getElementById("downloadButton");
+    const tabButtons = document.querySelectorAll("button[role='tab']");
+    const tabPanels = document.querySelectorAll(".tab-content");
 
-    let uploadedFileContent = null;
-    let processedFileContent = null;
+    function switchTab(targetId) {
+        tabButtons.forEach(btn => {
+            btn.setAttribute("aria-selected", btn.id === targetId);
+            btn.setAttribute("tabindex", btn.id === targetId ? "0" : "-1");
+        });
 
-    // Habilita o botão de processar quando um arquivo é selecionado
-    fileInput.addEventListener('change', (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            messageArea.textContent = ''; // Limpa mensagens de erro anteriores
-            processButton.disabled = false;
-            downloadButton.disabled = true;
-            outputContent.value = 'Arquivo pronto para processamento.';
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                uploadedFileContent = e.target.result;
-                console.log("DEBUG: Conteúdo do arquivo lido. Tamanho:", uploadedFileContent.length);
-            };
-            reader.onerror = () => {
-                messageArea.textContent = 'Erro ao ler o arquivo.';
-                uploadedFileContent = null;
-                processButton.disabled = true;
-                console.error("DEBUG: Erro ao ler o arquivo.");
-            };
-            reader.readAsText(file, 'UTF-8');
-        } else {
-            processButton.disabled = true;
-            downloadButton.disabled = true;
-            outputContent.value = '';
-            uploadedFileContent = null;
-            console.log("DEBUG: Nenhum arquivo selecionado.");
-        }
-    });
-
-    // Lógica de processamento do arquivo
-    processButton.addEventListener('click', () => {
-        if (!uploadedFileContent) {
-            messageArea.textContent = 'Por favor, selecione um arquivo primeiro.';
-            console.warn("DEBUG: Tentativa de processar sem arquivo carregado.");
-            return;
-        }
-
-        messageArea.textContent = '';
-        outputContent.value = 'Processando...';
-        processButton.disabled = true;
-        downloadButton.disabled = true;
-        loadingSpinner.classList.remove('hidden'); // Mostra o spinner
-
-        // Simula um atraso para mostrar o spinner (remova em produção se não for necessário)
-        setTimeout(() => {
-            try {
-                // Garante que as linhas são separadas corretamente e trimadas
-                const linhas = uploadedFileContent.split(/\r?\n/).map(line => line.trim()); 
-                console.log("DEBUG: Total de linhas lidas:", linhas.length);
-                console.log("DEBUG: Primeiras 5 linhas:", linhas.slice(0, 5));
-
-                // Etapa 1: Identificar o primeiro ID para cada CPF nas linhas tipo 03
-                const cpfParaPrimeiroId = {};
-                const idSubstituicoes = {};
-
-                for (const linha of linhas) {
-                    if (linha.startsWith("03|")) {
-                        const partes = linha.split("|");
-                        // Garante que a linha tem partes suficientes para acessar o ID e CPF
-                        if (partes.length > 2) {
-                            const id = partes[1];
-                            const cpf = partes[2];
-                            if (!cpfParaPrimeiroId.hasOwnProperty(cpf)) {
-                                cpfParaPrimeiroId[cpf] = id;
-                            }
-                            idSubstituicoes[id] = cpfParaPrimeiroId[cpf];
-                        } else {
-                            console.warn(`DEBUG: Linha 03| mal formatada (menos de 3 partes): ${linha}`);
-                        }
-                    }
-                }
-                console.log("DEBUG: cpfParaPrimeiroId:", cpfParaPrimeiroId);
-                console.log("DEBUG: idSubstituicoes:", idSubstituicoes);
-
-                // Etapa 2: Substituir os IDs nas linhas 03 e 05
-                const linhasSubstituidas = linhas.map(linha => {
-                    if (linha.startsWith("03|") || linha.startsWith("05|")) {
-                        const partes = linha.split("|");
-                        // Garante que a linha tem partes suficientes para acessar o ID
-                        if (partes.length > 1) {
-                            const tipo = linha.substring(0, 2);
-                            const id = partes[1];
-                            if (idSubstituicoes.hasOwnProperty(id)) {
-                                const novoId = idSubstituicoes[id];
-                                // Usa replace para garantir que apenas o primeiro ID após o tipo seja substituído
-                                // Garante que o ID é um número para evitar problemas com regex
-                                const regex = new RegExp(`^${tipo}\\|${id.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\|`);
-                                const novaLinha = linha.replace(regex, `${tipo}|${novoId}|`);
-                                if (linha !== novaLinha) {
-                                    // console.log(`DEBUG: Substituindo em linha ${tipo}: '${id}' por '${novoId}'. Original: '${linha}', Nova: '${novaLinha}'`);
-                                }
-                                return novaLinha;
-                            }
-                        } else {
-                            console.warn(`DEBUG: Linha ${linha.substring(0,2)}| mal formatada (menos de 2 partes): ${linha}`);
-                        }
-                    }
-                    return linha;
-                });
-                console.log("DEBUG: Primeiras 5 linhas substituídas:", linhasSubstituidas.slice(0, 5));
-
-
-                // Etapa 3: Remover as linhas duplicadas do tipo 03
-                const cpfIdsMantidos = {};
-                const linhasFinais = [];
-
-                for (const linha of linhasSubstituidas) {
-                    if (linha.startsWith("03|")) {
-                        const partes = linha.split("|");
-                        // Garante que a linha tem partes suficientes para acessar o ID e CPF
-                        if (partes.length > 2) {
-                            const id = partes[1];
-                            const cpf = partes[2];
-                            // Verifica se o ID atual é o primeiro ID para este CPF e se ainda não foi mantido
-                            if (cpfParaPrimeiroId[cpf] === id && !cpfIdsMantidos.hasOwnProperty(`${cpf}|${id}`)) {
-                                cpfIdsMantidos[`${cpf}|${id}`] = true;
-                                linhasFinais.push(linha);
-                            } else {
-                                // console.log(`DEBUG: Removendo linha 03| duplicada ou não-primeiro ID: ${linha}`);
-                            }
-                        } else {
-                            linhasFinais.push(linha); // Mantém linhas 03| mal formatadas na etapa final se não puderem ser processadas
-                            console.warn(`DEBUG: Linha 03| mal formatada (menos de 3 partes) na etapa de remoção de duplicatas: ${linha}`);
-                        }
-                    } else {
-                        linhasFinais.push(linha);
-                    }
-                }
-                console.log("DEBUG: Total de linhas finais:", linhasFinais.length);
-                console.log("DEBUG: Primeiras 5 linhas finais:", linhasFinais.slice(0, 5));
-
-
-                processedFileContent = linhasFinais.join('\n');
-                outputContent.value = processedFileContent;
-                downloadButton.disabled = false;
-                messageArea.textContent = 'Arquivo processado com sucesso!';
-
-            } catch (error) {
-                messageArea.textContent = `Erro ao processar o arquivo: ${error.message}`;
-                outputContent.value = 'Erro no processamento.';
-                console.error('DEBUG: Erro de processamento:', error);
-            } finally {
-                processButton.disabled = false;
-                loadingSpinner.classList.add('hidden'); // Esconde o spinner
+        tabPanels.forEach(panel => {
+            if (panel.id === document.getElementById(targetId).getAttribute("aria-controls")) {
+                panel.removeAttribute("hidden");
+            } else {
+                panel.setAttribute("hidden", "");
             }
-        }, 50); // Pequeno atraso para UX
+        });
+    }
+
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => switchTab(btn.id));
     });
 
-    // Lógica de download do arquivo
-    downloadButton.addEventListener('click', () => {
-        if (processedFileContent) {
-            const blob = new Blob([processedFileContent], { type: 'text/plain;charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'aej_final.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            console.log("DEBUG: Arquivo baixado.");
-        } else {
-            messageArea.textContent = 'Nenhum conteúdo processado para baixar.';
-            console.warn("DEBUG: Tentativa de baixar sem conteúdo processado.");
-        }
+    processButton.addEventListener("click", () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const content = e.target.result;
+            outputContent.value = content;
+
+            const lines = content.split("\n").filter(line => line.startsWith("03|"));
+            if (lines.length === 0) return;
+
+            const headerRow = document.getElementById("tableHeaderRow");
+            const body = document.getElementById("tableBody");
+            headerRow.innerHTML = "";
+            body.innerHTML = "";
+
+            const headers = ["Tipo", "ID Vínculo", "CPF", "Nome Empregado"];
+            headers.forEach(h => {
+                const th = document.createElement("th");
+                th.textContent = h;
+                headerRow.appendChild(th);
+            });
+
+            lines.forEach(line => {
+                const parts = line.split("|");
+                const tr = document.createElement("tr");
+                for (let i = 0; i < headers.length; i++) {
+                    const td = document.createElement("td");
+                    td.textContent = parts[i] || "";
+                    tr.appendChild(td);
+                }
+                body.appendChild(tr);
+            });
+
+            $('#filteredTable').DataTable({
+                destroy: true,
+                dom: 'Bfrtip',
+                buttons: ['excel'],
+                scrollX: true
+            });
+
+            // Ir para aba filtragem
+            switchTab('tabAdvancedFilter');
+
+            // Habilita botão de download
+            if (downloadButton) downloadButton.disabled = false;
+        };
+
+        reader.readAsText(file);
     });
+
+    if (downloadButton) {
+        downloadButton.addEventListener("click", () => {
+            const table = $('#filteredTable').DataTable();
+            table.button('.buttons-excel').trigger();
+        });
+    }
+});
+
+document.getElementById("downloadTxtButton").addEventListener("click", () => {
+    const content = document.getElementById("outputContentInitial").value;
+    if (!content) return;
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "aej_processado.txt";
+    link.click();
 });
